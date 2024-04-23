@@ -16,7 +16,7 @@ class RecipeManager(models.Manager):
     def get_published(self):
         return self.filter(
             is_published=True
-        )
+        ).order_by('-id').select_related('category', 'author').prefetch_related('tags')  # noqa
 
 
 class Category(models.Model):
