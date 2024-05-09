@@ -25,7 +25,7 @@ class RecipeSerializer(serializers.ModelSerializer):
     # Precisamos manter coisas que estamos personalizando o que for padrao o django entende sozinho
     public = serializers.BooleanField(
         source='is_published',
-        read_only=True
+        read_only=False
     )
 
     preparation = serializers.SerializerMethodField(
