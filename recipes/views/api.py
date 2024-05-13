@@ -8,7 +8,8 @@ from ..serializers import TagSerializer
 from unicodedata import category
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.viewsets import ModelViewSet
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import IsAuthenticatedOrReadOnly
+from ..permissions import IsOwner
 
 
 class RecipeAPIV2Pagination(PageNumberPagination):
@@ -19,7 +20,7 @@ class RecipeAPIV2ViewSet(ModelViewSet):
     queryset = Recipe.objects.get_published()
     serializer_class = RecipeSerializer
     pagination_class = RecipeAPIV2Pagination
-    permission_classes = [IsAuthenticated, ]
+    permission_classes = [IsAuthenticatedOrReadOnly, ]
 
     def get_serializer_class(self):
         return super().get_serializer_class()
@@ -42,8 +43,44 @@ class RecipeAPIV2ViewSet(ModelViewSet):
 
         return qs
 
+    def get_object(self):
+        pk = self.kwargs.get('pk', '')
 
-@api_view()
+        obj = get_object_or_404(
+            self.get_queryset(),
+            pk=pk,
+        )
+        self.check_object_permissions(self.request, obj)
+
+        return obj
+
+    def get_permissions(self):
+        if self.request.method in ['PATCH', 'DELETE']:
+            return [IsOwner(), ]
+        return super().get_permissions()
+
+    def list(self, request, *args, **kwargs):
+        print('REQUEST', request.user)
+        print(request.user.is_authenticated)
+        return super().list(request, *args, **kwargs)
+
+    def partial_update(self, request, *args, **kwargs):
+        recipe = self.get_object()
+        serializer = RecipeSerializer(
+            instance=recipe,
+            data=request.data,
+            many=False,
+            context={'request': request},
+            partial=True,
+        )
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response(
+            serializer.data,
+        )
+
+
+@ api_view()
 def tag_api_detail(request, pk):
     tag = get_object_or_404(Tag.objects.all(),
                             pk=pk
