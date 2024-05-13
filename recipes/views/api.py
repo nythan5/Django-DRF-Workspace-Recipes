@@ -10,6 +10,7 @@ from rest_framework.pagination import PageNumberPagination
 from rest_framework.viewsets import ModelViewSet
 from rest_framework.permissions import IsAuthenticatedOrReadOnly
 from ..permissions import IsOwner
+from rest_framework import status
 
 
 class RecipeAPIV2Pagination(PageNumberPagination):
@@ -63,6 +64,17 @@ class RecipeAPIV2ViewSet(ModelViewSet):
         print('REQUEST', request.user)
         print(request.user.is_authenticated)
         return super().list(request, *args, **kwargs)
+
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        serializer.save(author=request.user)
+        headers = self.get_success_headers(serializer.data)
+        return Response(
+            serializer.data,
+            status=status.HTTP_201_CREATED,
+            headers=headers
+        )
 
     def partial_update(self, request, *args, **kwargs):
         recipe = self.get_object()
