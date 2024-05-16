@@ -10,3 +10,4 @@ from .assets import *
 from .messages import *
 from .debug_tool_bar import *
 from .rest_framework import *  # isort:skip
+from .cors_headers import *
